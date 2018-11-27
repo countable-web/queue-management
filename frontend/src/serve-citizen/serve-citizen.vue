@@ -2,7 +2,7 @@
 
 <template>
   <div id="serveModal" class="serve-modal">
-    <div class="serve-modal-content">
+    <div class="serve-modal-content" v-dragged="onDrag">
       <b-alert :show="this.serveModalAlert != ''"
                 style="h-align: center"
                 variant="warning">{{this.serveModalAlert}}</b-alert>
@@ -50,9 +50,14 @@
                           id="serve-citizen-begin-service-button">Begin Service</b-button>
                 <b-button @click="clickReturnToQueue"
                           v-if="reception"
-                          :disabled="serviceBegun===true || performingAction"
+                          :disabled="performingAction"
                           class="btn-primary serve-btn"
                           id="serve-citizen-return-to-queue-button">Return to Queue</b-button>
+                <select id="priority-selection" class="custom-select" v-model="priority_selection">
+                  <option value=1>High Priority</option>
+                  <option value=2>Default Priority</option>
+                  <option value=3>Low Priority</option>
+                </select>
               </div>
               <div>
                 <b-button @click="clickCitizenLeft"
@@ -204,8 +209,13 @@ export default {
     quick: {
       get() { return this.serviceModalForm.quick },
       set(value) {
-        console.log(value)
         this.editServiceModalForm({type:'quick',value})
+      }
+    },
+    priority_selection: {
+      get() { return this.serviceModalForm.priority },
+      set(value) {
+        this.editServiceModalForm({type:'priority',value})
       }
     }
   },
@@ -243,6 +253,19 @@ export default {
     },
     closeWindow() {
       this.$store.dispatch('clickServiceModalClose')
+    },
+    onDrag({ el, deltaX, deltaY, offsetX, offsetY, clientX, clientY, first, last }) {
+      if (first) {
+        this.dragged = true
+        return
+      }
+      if (last) {
+        this.dragged = false
+        return
+      }
+      this.left = (this.left || 0) + deltaX
+      this.top = (this.top || 0) + deltaY
+      el.style.transform = "translate("+this.left+"px,"+this.top+"px)"
     }
   }
 }
@@ -271,7 +294,6 @@ export default {
     padding: 20px;
     border: 1px solid #888;
     width: 80%;
-
 }
 #serve-citizen-modal-top {
   border: 1px solid grey;
@@ -293,5 +315,9 @@ export default {
 strong {
   color: blue;
   font-size: 1.35rem;
+}
+#priority-selection {
+    display: inline-block;
+    width: 135px;
 }
 </style>
