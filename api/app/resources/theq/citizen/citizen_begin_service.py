@@ -28,10 +28,10 @@ class CitizenBeginService(Resource):
     @jwt.requires_auth
     @api_call_with_retry
     def post(self, id):
-        lock = FileLock("lock/begin_citizen.lock")
+        csr = CSR.find_by_username(g.jwt_oidc_token_info['preferred_username'])
+        lock = FileLock("lock/begin_citizen_{}.lock".format(csr.office_id))
 
         with lock:
-            csr = CSR.find_by_username(g.jwt_oidc_token_info['preferred_username'])
             citizen = Citizen.query.filter_by(citizen_id=id, office_id=csr.office_id).first()
             pending_service_state = SRState.get_state_by_name("Active")
 

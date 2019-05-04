@@ -25,7 +25,7 @@ class ServiceReqSchema(ma.ModelSchema):
         model = ServiceReq
         jit = toastedmarshmallow.Jit
 
-    citizen_id = fields.Int()
+    citizen_id = fields.Int(required=True)
     channel_id = fields.Int()
     service_id = fields.Int()
     quantity = fields.Int()

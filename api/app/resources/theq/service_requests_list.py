@@ -35,6 +35,9 @@ class ServiceRequestsList(Resource):
         if not json_data:
             return {"message": "No input data received for creating service request"}, 400
 
+        # if not json_data['citizen_id']:
+        #     return {"message": "No citizen specified, but a citizen is required"}, 400
+    
         csr = CSR.find_by_username(g.jwt_oidc_token_info['preferred_username'])
 
         try:

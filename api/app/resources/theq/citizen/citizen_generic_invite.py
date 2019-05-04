@@ -29,10 +29,10 @@ class CitizenGenericInvite(Resource):
     @api_call_with_retry
     def post(self):
 
-        lock = FileLock("lock/invite_citizen.lock")
+        csr = CSR.find_by_username(g.jwt_oidc_token_info['preferred_username'])
+        lock = FileLock("lock/invite_citizen_{}.lock".format(csr.office_id))
 
         with lock:
-            csr = CSR.find_by_username(g.jwt_oidc_token_info['preferred_username'])
 
             active_citizen_state = CitizenState.query.filter_by(cs_state_name='Active').first()
             waiting_period_state = PeriodState.get_state_by_name("Waiting")
