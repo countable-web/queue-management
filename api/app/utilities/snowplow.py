@@ -24,37 +24,30 @@ import http.client
 import time
 import json
 import threading
+import logging
 
 
-class AsyncSnowPlowEvent(threading.Thread):
-    """
-    We use a thread as a simple way to defer reporting to SnowPlow, and
-    avoid blocking the HTTP server's responses. This avoids extra latency
-    on API clients.
-    """
-    def __init__(self, json_event):
-        self.json_event = json_event
-        threading.Thread.__init__(self)
+def work(json_event):
+    # Make the connection
+    logging.info("running thread.")
+    conn = http.client.HTTPSConnection(SnowPlow.sp_host)
 
-    def run(self):
-        # Make the connection
-        conn = http.client.HTTPSConnection(SnowPlow.sp_host)
+    # Prepare the headers
+    headers = {'Content-type': 'application/json'}
 
-        # Prepare the headers
-        headers = {'Content-type': 'application/json'}
+    # Send a post request containing the event as JSON in the body
+    conn.request('POST', '/post', json_event, headers)
 
-        # Send a post request containing the event as JSON in the body
-        conn.request('POST', '/post', self.json_event, headers)
-
-        # Recieve the response
-        try:
-            response = conn.getresponse()
-        except http.client.ResponseNotReady as e:
-            print("==> Snowplow pod ResponseNotReady Exception raised")
-        # Print the response, if it is not 200.
-        if response.status != 200:
-            print("==> Snowplow pod did not respond with status of 200")
-            print(response.status, response.reason)
+    # Recieve the response
+    try:
+        response = conn.getresponse()
+    except http.client.ResponseNotReady as e:
+        print("==> Snowplow pod ResponseNotReady Exception raised")
+    # Print the response, if it is not 200.
+    if response.status != 200:
+        print("==> Snowplow pod did not respond with status of 200")
+        print(response.status, response.reason)
+    logging.info('done running thread.')
 
 
 class SnowPlow():
@@ -309,7 +302,13 @@ class SnowPlow():
     @staticmethod
     def post_event(json_event):
         # Use a Thread to prevent clogging up web workers
-        AsyncSnowPlowEvent(json_event).start()
+        logging.info('snowplow starting async call')
+        # ev = AsyncSnowPlowEvent(json_event)
+        # ev.start()
+        t = threading.Thread(target=work, args=(json_event,))
+        t.daemon = True
+        t.start()
+        logging.info('snowplow ending async call')
 
     @staticmethod
     def make_tracking_call_dict(schema, citizen_dict, office_dict, agent_dict, data):
